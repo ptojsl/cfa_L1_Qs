@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "done": { "qm": 290, "econ": 0, "ci": 50, "fsa": 462, "eq": 180, "fi": 319, "der": 0, "ai": 0, "pm": 0, "eth": 0 },
+  "mocks": [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
+  "scores": [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+  "dpw": 6,
+  "history": { "2026-09-05": 1301 },
+  "updatedAt": "2026-09-05T16:23:39.178Z"
+}

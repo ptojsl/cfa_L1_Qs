@@ -1,0 +1,1244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CFA Level I Burn-Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+  :root{
+    --ground:#E9EDEF;
+    --panel:#FBFCFC;
+    --panel-2:#F2F5F6;
+    --ink:#13202A;
+    --ink-2:#4A5C67;
+    --ink-3:#7C8D97;
+    --rule:#C6D1D6;
+    --rule-soft:#DBE3E6;
+    --grid:#D3DDE1;
+    --accent:#14636A;
+    --accent-soft:#B6D2D3;
+    --pending:#AEBDC4;
+    --signal:#BF5C1B;
+    --good:#3C7A50;
+    --focus:#14636A;
+    --shadow:0 1px 2px rgba(19,32,42,.06), 0 8px 24px -16px rgba(19,32,42,.35);
+    --r:3px;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E161C; --panel:#151F27; --panel-2:#1B262F;
+      --ink:#E2EAED; --ink-2:#A3B4BD; --ink-3:#74868F;
+      --rule:#2A3A45; --rule-soft:#22303A; --grid:#1E2C35;
+      --accent:#4FADB2; --accent-soft:#2A4A4E; --pending:#3A4C57;
+      --signal:#DD8A46; --good:#5DA173; --focus:#4FADB2;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E161C; --panel:#151F27; --panel-2:#1B262F;
+    --ink:#E2EAED; --ink-2:#A3B4BD; --ink-3:#74868F;
+    --rule:#2A3A45; --rule-soft:#22303A; --grid:#1E2C35;
+    --accent:#4FADB2; --accent-soft:#2A4A4E; --pending:#3A4C57;
+    --signal:#DD8A46; --good:#5DA173; --focus:#4FADB2;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 72px}
+  @media (max-width:640px){ .wrap{padding:0 16px 56px} }
+
+  h1,h2,h3,.num,.eyebrow,.chip,button,input,th{font-family:"Libre Franklin",-apple-system,"Segoe UI",sans-serif}
+  .mono,.num,.eyebrow,.chip,input[type="number"],td.n,th.n{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+
+  /* ---------- masthead ---------- */
+  .masthead{position:relative;margin:0 -24px;padding:40px 24px 30px;border-bottom:1px solid var(--rule);overflow:hidden}
+  @media (max-width:640px){ .masthead{margin:0 -16px;padding:28px 16px 24px} }
+  .masthead::before{
+    content:"";position:absolute;inset:0;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:24px 24px;
+    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.85),transparent 92%);
+    mask-image:linear-gradient(to bottom,rgba(0,0,0,.85),transparent 92%);
+    opacity:.6;pointer-events:none;
+  }
+  .masthead > *{position:relative}
+  .title-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:26px}
+  h1{font-size:clamp(26px,4.4vw,38px);font-weight:700;letter-spacing:-.02em;margin:0;text-wrap:balance}
+  .sitting{color:var(--ink-2);font-size:14px;font-family:"IBM Plex Mono",monospace}
+
+  .figures{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--rule);background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow)}
+  .fig{padding:16px 18px 15px;border-right:1px solid var(--rule-soft)}
+  .fig:last-child{border-right:0}
+  @media (max-width:700px){
+    .figures{grid-template-columns:1fr}
+    .fig{border-right:0;border-bottom:1px solid var(--rule-soft)}
+    .fig:last-child{border-bottom:0}
+  }
+  .fig .num{display:block;font-size:clamp(30px,5.2vw,40px);font-weight:600;line-height:1.05;letter-spacing:-.02em;margin:6px 0 2px}
+  .fig .sub{font-size:12.5px;color:var(--ink-2);font-family:"IBM Plex Mono",monospace;display:block}
+  .fig.pace .num{color:var(--signal)}
+  .dpw{display:flex;align-items:center;gap:6px;margin-top:9px}
+  .dpw .lbl{font-size:11.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+  .dpw button{padding:3px 8px;font-size:11.5px;font-family:"IBM Plex Mono",monospace}
+  .dpw button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  :root[data-theme="dark"] .dpw button[aria-pressed="true"]{color:#0E161C}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .dpw button[aria-pressed="true"]{color:#0E161C} }
+
+  /* ---------- today ---------- */
+  .today{
+    margin-top:28px;padding:16px 20px;background:var(--panel);
+    border:1px solid var(--rule);border-left:3px solid var(--signal);
+    border-radius:var(--r);box-shadow:var(--shadow);
+  }
+  .today .line{font-size:19px;font-family:"Libre Franklin",sans-serif;font-weight:600;letter-spacing:-.01em;margin:6px 0 0;text-wrap:balance}
+  .today .line .q{color:var(--signal)}
+  .today .why{margin:7px 0 0;font-size:14.5px;color:var(--ink-2)}
+
+  /* ---------- overall bar ---------- */
+  .overall{margin:34px 0 8px}
+  .overall-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:10px;flex-wrap:wrap}
+  .overall-head .k{font-size:13px;color:var(--ink-2);font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+  .bigbar{position:relative;height:26px;border:1px solid var(--rule);border-radius:var(--r);background:var(--panel-2);overflow:hidden;display:flex}
+  .bigbar .seg{height:100%;flex:0 0 auto;min-width:0}
+  .bigbar .seg[hidden]{display:none}
+  .seg.done{background:var(--accent)}
+  .seg.mock{background:var(--accent-soft)}
+  #planTick{
+    position:absolute;top:-1px;bottom:-1px;width:2px;background:var(--signal);
+    transform:translateX(-1px);pointer-events:none;
+  }
+  #planTick::after{
+    content:"";position:absolute;top:-4px;left:-3px;width:8px;height:8px;
+    background:var(--signal);clip-path:polygon(50% 100%,0 0,100% 0);
+  }
+  .legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:10px;font-size:12px;color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .sw{width:11px;height:11px;border-radius:2px;display:inline-block;border:1px solid rgba(0,0,0,.12)}
+  .sw.tick{width:2px;height:12px;border:0;border-radius:0;background:var(--signal)}
+
+  /* ---------- velocity ---------- */
+  .velo{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:18px;border:1px solid var(--rule);border-radius:var(--r);background:var(--panel)}
+  .velo div{padding:13px 16px;border-right:1px solid var(--rule-soft)}
+  .velo div:last-child{border-right:0}
+  @media (max-width:700px){
+    .velo{grid-template-columns:1fr}
+    .velo div{border-right:0;border-bottom:1px solid var(--rule-soft)}
+    .velo div:last-child{border-bottom:0}
+  }
+  .velo .v{display:block;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:20px;font-weight:500;margin-top:5px;letter-spacing:-.01em}
+  .velo .v.warn{color:var(--signal)}
+  .velo .v.good{color:var(--good)}
+  .velo .vs{display:block;font-size:12px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;margin-top:3px}
+
+  /* ---------- sections ---------- */
+  section.block{margin-top:44px}
+  h2{font-size:15px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;margin:0 0 4px;color:var(--ink)}
+  .lede{margin:0 0 18px;color:var(--ink-2);font-size:15px;max-width:66ch}
+
+  /* ---------- ledger ---------- */
+  .ledger{border:1px solid var(--rule);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);overflow:hidden}
+  .lrow{display:grid;grid-template-columns:minmax(190px,1.5fr) minmax(120px,1.6fr) auto;align-items:center;gap:18px;padding:13px 18px;border-bottom:1px solid var(--rule-soft)}
+  .lrow:last-child{border-bottom:0}
+  .lrow.head{background:var(--panel-2);padding-top:9px;padding-bottom:9px}
+  .lrow.head .eyebrow{font-size:10.5px}
+  .tname{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .tname b{font-family:"Libre Franklin",sans-serif;font-weight:600;font-size:15px;letter-spacing:-.005em}
+  .tmeta{font-size:11.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;display:flex;gap:10px;flex-wrap:wrap}
+  .flag{color:var(--signal);font-weight:600}
+  .bar{height:9px;border-radius:2px;background:var(--pending);overflow:hidden;position:relative}
+  .bar > i{display:block;height:100%;background:var(--accent);border-radius:2px 0 0 2px}
+  .barwrap{display:flex;flex-direction:column;gap:6px}
+  .barnums{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+  .barnums .clear{color:var(--good);font-weight:500}
+  .stepper{display:flex;align-items:center;gap:6px;justify-self:end}
+  .stepper input[type="number"]{width:66px;padding:5px 7px;text-align:right;font-size:14px;border:1px solid var(--rule);border-radius:var(--r);background:var(--panel-2);color:var(--ink)}
+  .stepper .of{font-size:12px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+  button{font-size:12px;font-weight:600;padding:5px 9px;cursor:pointer;border:1px solid var(--rule);border-radius:var(--r);background:var(--panel-2);color:var(--ink-2);transition:background .12s ease,color .12s ease,border-color .12s ease}
+  button:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
+  button:disabled{opacity:.38;cursor:default}
+  :root[data-theme="dark"] button:hover:not(:disabled){color:#0E161C}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) button:hover:not(:disabled){color:#0E161C} }
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  @media (max-width:760px){
+    .lrow{grid-template-columns:1fr;gap:10px}
+    .lrow.head{display:none}
+    .stepper{justify-self:start}
+  }
+
+  /* ---------- mocks ---------- */
+  .mockgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  @media (max-width:820px){ .mockgrid{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:400px){ .mockgrid{grid-template-columns:1fr} }
+  .mock{display:flex;align-items:stretch;border:1px solid var(--rule);border-radius:var(--r);background:var(--panel);overflow:hidden}
+  .mock.is-done{border-color:var(--accent)}
+  .mockToggle{
+    flex:1 1 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:10px 11px;border:0;border-radius:0;background:transparent;text-align:left;
+    font-size:13px;font-family:"IBM Plex Mono",monospace;color:var(--ink-2);font-weight:400;min-width:0;
+  }
+  .mockToggle:hover:not(:disabled){background:var(--panel-2);color:var(--ink)}
+  .mock.is-done .mockToggle{background:var(--accent);color:#fff}
+  .mock.is-done .mockToggle:hover:not(:disabled){background:var(--accent);color:#fff}
+  :root[data-theme="dark"] .mock.is-done .mockToggle,
+  :root[data-theme="dark"] .mock.is-done .mockToggle:hover:not(:disabled){color:#0E161C}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .mock.is-done .mockToggle,
+    :root:not([data-theme="light"]) .mock.is-done .mockToggle:hover:not(:disabled){color:#0E161C}
+  }
+  .mockToggle .tick{opacity:.35;font-weight:600;flex:none}
+  .mock.is-done .mockToggle .tick{opacity:1}
+  .mockScoreWrap{display:flex;align-items:center;gap:2px;padding:0 9px 0 7px;border-left:1px solid var(--rule);background:var(--panel-2);flex:none}
+  .mockScore{
+    width:36px;padding:4px 0;text-align:right;font-size:13px;border:0;background:transparent;
+    color:var(--ink);font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  }
+  .mockScore::placeholder{color:var(--ink-3)}
+  .mockScoreWrap .pc{font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+  .mockScore::-webkit-outer-spin-button,.mockScore::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .mockScore{-moz-appearance:textfield}
+
+  /* ---------- score chart ---------- */
+  .scorepanel{border:1px solid var(--rule);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);padding:16px 18px 12px;margin-bottom:16px}
+  .scorestats{display:flex;flex-wrap:wrap;gap:20px 34px;margin-bottom:6px}
+  .scorestats .s .v{display:block;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:22px;font-weight:500;letter-spacing:-.01em;margin-top:4px}
+  .scorestats .s .v.good{color:var(--good)}
+  .scorestats .s .v.warn{color:var(--signal)}
+  .chartbox{position:relative;margin-top:6px}
+  .chartbox svg{display:block;width:100%;height:auto;overflow:visible}
+  .empty{font-size:14px;color:var(--ink-3);padding:14px 0 6px}
+  .tip{
+    position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-118%);
+    background:var(--ink);color:var(--ground);padding:5px 9px;border-radius:var(--r);
+    font-family:"IBM Plex Mono",monospace;font-size:11.5px;white-space:nowrap;
+    transition:opacity .1s ease;z-index:3;
+  }
+  .tip.on{opacity:1}
+  .benchnote{font-size:12.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;margin-top:8px}
+
+  /* ---------- plan ---------- */
+  .phases{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:700px){ .phases{grid-template-columns:1fr} }
+  .phase{border:1px solid var(--rule);border-left:3px solid var(--accent);border-radius:var(--r);background:var(--panel);padding:16px 18px;box-shadow:var(--shadow)}
+  .phase.two{border-left-color:var(--signal)}
+  .phase h3{margin:6px 0 6px;font-size:17px;font-weight:600;letter-spacing:-.01em}
+  .phase p{margin:0;font-size:14.5px;color:var(--ink-2)}
+  .phase .rate{margin-top:12px;padding-top:11px;border-top:1px solid var(--rule-soft);font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink)}
+
+  .note{border-left:2px solid var(--rule);padding:2px 0 2px 16px;color:var(--ink-2);font-size:14.5px;max-width:68ch}
+  .note b{color:var(--ink);font-family:"Libre Franklin",sans-serif;font-weight:600}
+  .note code{font-family:"IBM Plex Mono",monospace;font-size:13px;background:var(--panel-2);border:1px solid var(--rule-soft);border-radius:2px;padding:1px 5px}
+
+  .savebar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:14px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3)}
+  .savebar .hist{display:flex;gap:6px}
+  .savebar .status{display:inline-flex;align-items:center;gap:8px;min-width:0}
+  .savebar .undo-note{color:var(--ink-2)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-3);display:inline-block;flex:none}
+  .dot.ok{background:var(--good)}
+  .dot.busy{background:var(--signal)}
+
+  /* ---------- side sheet ---------- */
+  .sheetOpen{
+    position:fixed;right:20px;bottom:20px;z-index:20;
+    display:inline-flex;align-items:center;gap:8px;
+    padding:11px 16px;border-radius:999px;
+    background:var(--ink);color:var(--ground);border:1px solid var(--ink);
+    font-family:"Libre Franklin",sans-serif;font-size:13px;font-weight:600;
+    box-shadow:0 2px 6px rgba(0,0,0,.18),0 12px 30px -14px rgba(0,0,0,.5);
+  }
+  .sheetOpen:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#fff}
+  :root[data-theme="dark"] .sheetOpen:hover:not(:disabled){color:#0E161C}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .sheetOpen:hover:not(:disabled){color:#0E161C} }
+  @media (max-width:560px){ .sheetOpen{right:12px;bottom:12px;padding:10px 14px} }
+
+  .scrim{
+    position:fixed;inset:0;background:rgba(10,18,24,.42);z-index:30;
+    opacity:0;visibility:hidden;transition:opacity .22s ease,visibility .22s;
+  }
+  .scrim.on{opacity:1;visibility:visible}
+
+  .sheet{
+    position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);z-index:31;
+    background:var(--panel);border-left:1px solid var(--rule);
+    transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+    display:flex;flex-direction:column;box-shadow:-24px 0 48px -30px rgba(0,0,0,.6);
+  }
+  .sheet.on{transform:translateX(0)}
+  .sheetHead{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:18px 22px 14px;border-bottom:1px solid var(--rule);flex:none;
+  }
+  .sheetHead h2{margin:0;font-size:15px;letter-spacing:.11em}
+  .sheetBody{overflow-y:auto;padding:4px 22px 32px;-webkit-overflow-scrolling:touch}
+  .sheetBody h3{
+    font-family:"Libre Franklin",sans-serif;font-size:12px;font-weight:600;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+    margin:26px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--rule-soft);
+  }
+  .sheetBody h3:first-child{margin-top:20px}
+  .sheetBody p{margin:0 0 11px;font-size:14.5px;color:var(--ink-2)}
+  .sheetBody p b, .sheetBody li b{color:var(--ink);font-family:"Libre Franklin",sans-serif;font-weight:600}
+  .sheetBody ul{margin:0 0 12px;padding-left:0;list-style:none}
+  .sheetBody li{
+    position:relative;padding-left:17px;margin-bottom:8px;font-size:14.5px;color:var(--ink-2);
+  }
+  .sheetBody li::before{
+    content:"";position:absolute;left:2px;top:.62em;width:5px;height:5px;
+    border-radius:1px;background:var(--accent);
+  }
+  .sheetBody li.no::before{background:var(--signal);transform:rotate(45deg)}
+  .runsheet{width:100%;border-collapse:collapse;margin:2px 0 12px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+  .runsheet td{padding:5px 0;border-bottom:1px solid var(--rule-soft);color:var(--ink-2)}
+  .runsheet td:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+  .runsheet tr.tot td{border-bottom:0;font-weight:600;color:var(--ink);padding-top:8px}
+  .keys{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--panel-2);
+    border:1px solid var(--rule-soft);border-radius:var(--r);padding:2px 6px;color:var(--ink);white-space:nowrap;
+  }
+  .sheetSrc{margin-top:24px;padding-top:14px;border-top:1px solid var(--rule);font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);line-height:1.8}
+  .sheetSrc a{color:var(--ink-2)}
+
+  footer{margin-top:52px;padding-top:18px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;line-height:1.9}
+  footer a{color:var(--ink-2)}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;animation:none !important} }
+  [hidden]{display:none !important}
+  img{max-width:100%}
+
+  /* ---------- quick add ---------- */
+  .quickadd{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+    padding:12px 16px;margin-bottom:14px;
+    border:1px solid var(--rule);border-left:3px solid var(--accent);
+    border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);
+  }
+  .quickadd label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-family:"Libre Franklin",sans-serif;font-weight:500}
+  .quickadd select, .quickadd input{
+    padding:6px 8px;font-size:14px;border:1px solid var(--rule);border-radius:var(--r);
+    background:var(--panel-2);color:var(--ink);font-family:"IBM Plex Mono",monospace;
+  }
+  .quickadd select{max-width:min(280px,52vw)}
+  .quickadd input{width:74px;text-align:right;font-variant-numeric:tabular-nums}
+  .quickadd .hint{font-size:12px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;flex:1 1 100%}
+  @media (max-width:560px){ .quickadd select{max-width:100%;flex:1 1 100%} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="title-row">
+      <h1>CFA Level I Burn-Down</h1>
+      <span class="sitting">Sitting 16 Nov 2026</span>
+    </div>
+    <div class="figures">
+      <div class="fig">
+        <span class="eyebrow">Days to exam</span>
+        <span class="num" id="figDays">72</span>
+        <span class="sub" id="figDaysSub">&nbsp;</span>
+      </div>
+      <div class="fig">
+        <span class="eyebrow">Questions left</span>
+        <span class="num" id="figLeft">3,147</span>
+        <span class="sub" id="figLeftSub">&nbsp;</span>
+      </div>
+      <div class="fig pace">
+        <span class="eyebrow">Required pace</span>
+        <span class="num" id="figPace">45</span>
+        <span class="sub" id="figPaceSub">questions per study day</span>
+        <span class="dpw">
+          <span class="lbl">days/week</span>
+          <button type="button" class="dpwBtn" data-d="5">5</button>
+          <button type="button" class="dpwBtn" data-d="6">6</button>
+          <button type="button" class="dpwBtn" data-d="7">7</button>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <div class="today">
+    <span class="eyebrow">Today</span>
+    <p class="line" id="todayLine">&nbsp;</p>
+    <p class="why" id="todayWhy">&nbsp;</p>
+  </div>
+
+  <section class="overall">
+    <div class="overall-head">
+      <span class="eyebrow">Whole bank</span>
+      <span class="k" id="pctLine">&nbsp;</span>
+    </div>
+    <div class="bigbar" id="bigbar">
+      <i class="seg done" style="width:28%"></i>
+      <i class="seg mock" hidden style="width:0%"></i>
+      <span id="planTick" style="left:28%"></span>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--accent)"></i> Topic questions answered</span>
+      <span><i class="sw" style="background:var(--accent-soft)"></i> Mock sessions completed</span>
+      <span><i class="sw tick"></i> Where the plan says you should be today</span>
+    </div>
+
+    <div class="velo">
+      <div>
+        <span class="eyebrow">Your pace</span>
+        <span class="v" id="vPace">—</span>
+        <span class="vs" id="vPaceSub">measured over your last 7 days</span>
+      </div>
+      <div>
+        <span class="eyebrow">Projected finish</span>
+        <span class="v" id="vFinish">—</span>
+        <span class="vs" id="vFinishSub">at your current pace</span>
+      </div>
+      <div>
+        <span class="eyebrow">Against plan</span>
+        <span class="v" id="vPlan">—</span>
+        <span class="vs" id="vPlanSub">&nbsp;</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Topic practice</h2>
+    <p class="lede">Every module in the Learning Ecosystem's Practice section, by topic. Type over the answered count as you work through them &mdash; the bars, the pace and the projection all follow.</p>
+    <div class="quickadd">
+      <label for="qaTopic">Just did</label>
+      <input type="number" id="qaCount" min="1" max="500" step="1" placeholder="25" aria-label="How many questions you just answered">
+      <label for="qaTopic" style="letter-spacing:normal;text-transform:none;font-size:14px;color:var(--ink-2)">questions in</label>
+      <select id="qaTopic" aria-label="Which topic"></select>
+      <button type="button" id="qaAdd">Add</button>
+      <span class="hint">Adds to that topic's running total, so you never have to work out the new number yourself. Enter also submits.</span>
+    </div>
+
+    <div class="ledger" id="ledger"></div>
+    <div class="savebar">
+      <span class="hist">
+        <button type="button" id="undoBtn" disabled title="Undo the last change (Ctrl/&#8984;+Z)">&#8617; Undo</button>
+        <button type="button" id="redoBtn" disabled title="Redo (Shift+Ctrl/&#8984;+Z)">Redo &#8618;</button>
+      </span>
+      <span class="hist">
+        <button type="button" id="exportBtn" title="Download all your progress as a JSON file">&#8681; Export</button>
+        <button type="button" id="importBtn" title="Load progress from a previously exported file">&#8679; Import</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </span>
+      <span class="undo-note" id="undoNote"></span>
+      <span class="status"><i class="dot" id="saveDot"></i><span id="saveText">Loading saved progress&hellip;</span></span>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Mock exams</h2>
+    <p class="lede">Sixteen 90-question sessions &mdash; Mocks A and B plus Mocks 1&ndash;6, two sessions each. Tap one when it's done, and type your score beside it.</p>
+
+    <div class="scorepanel">
+      <div class="scorestats" id="scoreStats"></div>
+      <div class="chartbox" id="chartbox">
+        <div class="empty" id="scoreEmpty">No scores yet. Type a percentage next to any session below and it plots here, against the 70% working benchmark.</div>
+        <svg id="scoreChart" viewBox="0 0 720 210" role="img" aria-label="Mock exam scores in the order taken" hidden></svg>
+        <div class="tip" id="scoreTip"></div>
+      </div>
+      <p class="benchnote" id="benchNote">CFA Institute does not publish the minimum passing score; 70% is the benchmark candidates commonly work to.</p>
+    </div>
+
+    <div class="mockgrid" id="mockgrid"></div>
+  </section>
+
+  <section class="block">
+    <h2>How the 72 days split</h2>
+    <div class="phases">
+      <div class="phase one">
+        <span class="eyebrow">Phase 1 &middot; 5 Sep &ndash; 25 Oct</span>
+        <h3>Clear the topic bank</h3>
+        <p>1,707 topic questions over 51 days. Lead with Ethics &mdash; the single heaviest topic on the exam and entirely untouched &mdash; then Equity and Portfolio Management.</p>
+        <div class="rate">&#8776; 34 questions / day</div>
+      </div>
+      <div class="phase two">
+        <span class="eyebrow">Phase 2 &middot; 26 Oct &ndash; 15 Nov</span>
+        <h3>Mocks and review</h3>
+        <p>Sixteen sessions in 21 days: roughly one 90-question session every working day, with the off days spent reviewing the ones you got wrong rather than adding new questions.</p>
+        <div class="rate">&#8776; 1 session / day</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Reading the Practice page</h2>
+    <p class="note">To re-count this yourself at any point: each module row in Practice shows <b>N Total Questions</b> plus a button that gives away its state. <code>Take</code> means untouched, so all N are outstanding. <code>Resume</code> shows <b>Questions Answered: x / N</b> and only the gap counts. <code>Retake</code> means a finished attempt &mdash; zero outstanding, though the questions are still there to redo. The italic <b>Practice Pack Included (N Questions)</b> label is a subset of that module's total, not extra questions on top.</p>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<button type="button" class="sheetOpen" id="sheetOpen" aria-expanded="false" aria-controls="sheet">Exam-day sheet</button>
+<div class="scrim" id="scrim"></div>
+
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheetHead">
+    <h2 id="sheetTitle">Exam-day sheet</h2>
+    <button type="button" id="sheetClose" aria-label="Close the exam-day sheet">Close &times;</button>
+  </div>
+  <div class="sheetBody">
+
+    <h3>The shape of the day</h3>
+    <table class="runsheet">
+      <tr><td>Introduction &amp; tutorial</td><td>19 min</td></tr>
+      <tr><td>Session 1 &mdash; 90 questions</td><td>135 min</td></tr>
+      <tr><td>Optional break</td><td>31 min</td></tr>
+      <tr><td>Session 2 &mdash; 90 questions</td><td>135 min</td></tr>
+      <tr><td>Survey</td><td>8 min</td></tr>
+      <tr class="tot"><td>Door to door</td><td>&#8776; 5&frac12; hours</td></tr>
+    </table>
+    <p>Arrive <b>30 minutes before</b> your appointment time &mdash; arrive late and you may be refused admission. Each session runs on its own clock, so treat Session 1 as a closed box: finish it complete before it ends.</p>
+
+    <h3>Take with you</h3>
+    <ul>
+      <li>Your <b>international travel passport</b>. Nothing else counts as ID &mdash; check the expiry date this week, not in November.</li>
+      <li>Your <b>calculator</b>, plus its cover, a keystroke card and <b>loose batteries</b> &mdash; all three are explicitly allowed in the room. For the BA II Plus you may also bring a small screwdriver to change them.</li>
+      <li>Water in a <b>clear container with a lid</b>, label removed.</li>
+      <li>Layers. Test-centre temperature is not negotiable and you're there five and a half hours.</li>
+    </ul>
+
+    <h3>Leave at home</h3>
+    <ul>
+      <li class="no"><b>Any watch at all</b> &mdash; not just smart watches. Wristwatches, desk clocks and timers of every kind are banned. The on-screen timer is your only clock.</li>
+      <li class="no">Phones, tablets, headphones, fitness trackers, anything Bluetooth.</li>
+      <li class="no">Notes, textbooks, study guides, your own pens or paper.</li>
+      <li class="no">Bags of any kind, food, and any drink that isn't water.</li>
+      <li class="no">Jewellery beyond a wedding or engagement ring &mdash; also ornate hair clips, headbands, tie clips and cufflinks.</li>
+    </ul>
+
+    <h3>Calculator</h3>
+    <p>Only two models: the <b>TI BA II Plus</b> (including Professional) and the <b>HP 12C</b> (including Platinum, Prestige and the anniversary editions). Manuals are barred, you cannot borrow one at the centre, and using an unapproved model <b>voids your result</b> &mdash; whether or not a proctor spots it on the day.</p>
+    <p>Set it up now, not in the exam room. On the BA II Plus:</p>
+    <ul>
+      <li><span class="keys">2ND · FORMAT · 9 · ENTER</span> &mdash; floating decimals, so intermediate answers stop getting rounded.</li>
+      <li><span class="keys">2ND · P/Y · 1 · ENTER</span> &mdash; one payment per year. It ships set to 12 and quietly wrecks every TVM answer until you fix it.</li>
+      <li>Check you're in <b>END</b> mode, not BGN, unless the question is an annuity due.</li>
+      <li><span class="keys">2ND · CLR TVM</span> between problems &mdash; a leftover value from the last question is the most common self-inflicted wrong answer.</li>
+      <li>Practise the <b>CF / NPV / IRR</b> and <b>ICONV</b> worksheets until they're muscle memory. Fumbling those costs minutes you don't have.</li>
+    </ul>
+
+    <h3>Working the questions</h3>
+    <ul>
+      <li><b>90 seconds per question</b> is the budget CFA Institute itself gives: 90 questions in 135 minutes. Anything you're still fighting at two minutes is costing you an easier mark elsewhere.</li>
+      <li><b>There is no penalty for a wrong answer.</b> Never leave one blank &mdash; three choices means a pure guess is a one-in-three shot, and every question carries equal weight.</li>
+      <li>Read the <b>qualifier</b>. Questions turn on <i>most likely</i>, <i>least likely</i> and <i>best described</i>, and that word is often the whole question.</li>
+      <li>The exam does not use negatively framed items, so you won't be caught by a hidden "not". Read for the qualifier instead.</li>
+      <li>Answer what's asked, in the units asked. Percentage or decimal, annual or periodic, thousands or millions &mdash; wrong units are a right answer scored wrong.</li>
+    </ul>
+
+    <h3>Afterwards</h3>
+    <p>Results land <b>5 to 7 weeks</b> later: pass or fail, plus a performance summary by topic area. CFA Institute does not publish the minimum passing score, so no percentage you hit in practice is a guarantee &mdash; which is exactly why the trend across your mocks matters more than any single one.</p>
+
+    <div class="sheetSrc" id="sheetSrc"></div>
+  </div>
+</aside>
+
+<script>
+(function(){
+  "use strict";
+
+  var EXAM       = new Date(2026, 10, 16);  // 16 Nov 2026
+  var PLAN_START = new Date(2026, 8, 5);    //  5 Sep 2026
+  var PLAN_END   = new Date(2026, 10, 15);  // 15 Nov 2026 — last study day
+  var PLAN_BASE  = 1251;                    // questions answered on 5 Sep
+  var MOCK_Q = 90;
+  var DAY = 86400000;
+
+  // Counted from the CFA Institute Learning Ecosystem, Practice section, 5 Sep 2026.
+  // `lead` is the module holding the largest block of that topic's outstanding questions.
+  var TOPICS = [
+    {k:"qm",  name:"Quantitative Methods",             w:"6–9%",   wm:7.5,  total:290, modules:11, done:290,
+     lead:"Module 10: Simple Linear Regression", leadQ:49},
+    {k:"econ",name:"Economics",                        w:"6–9%",   wm:7.5,  total:216, modules:8,  done:0,
+     lead:"Module 1: The Firm and Market Structures", leadQ:50},
+    {k:"ci",  name:"Corporate Issuers",                w:"6–9%",   wm:7.5,  total:158, modules:7,  done:0,
+     lead:"Module 6: Capital Structure", leadQ:43},
+    {k:"fsa", name:"Financial Statement Analysis",     w:"11–14%", wm:12.5, total:462, modules:12, done:462,
+     lead:"Module 11: Financial Analysis Techniques", leadQ:66},
+    {k:"eq",  name:"Equity Investments",               w:"11–14%", wm:12.5, total:438, modules:8,  done:180,
+     lead:"Module 8: Equity Valuation: Concepts and Basic Tools", leadQ:100},
+    {k:"fi",  name:"Fixed Income",                     w:"11–14%", wm:12.5, total:329, modules:19, done:319,
+     lead:"Module 9: The Term Structure of Interest Rates", leadQ:10},
+    {k:"der", name:"Derivatives",                      w:"5–8%",   wm:6.5,  total:188, modules:10, done:0,
+     lead:"Module 2: Forward Commitment and Contingent Claim Features", leadQ:36},
+    {k:"ai",  name:"Alternative Investments",          w:"7–10%",  wm:8.5,  total:172, modules:7,  done:0,
+     lead:"Module 1: Alternative Investment Features, Methods, and Structures", leadQ:35},
+    {k:"pm",  name:"Portfolio Management",             w:"8–12%",  wm:10,   total:312, modules:6,  done:0,
+     lead:"Module 2: Portfolio Risk and Return: Part II", leadQ:93},
+    {k:"eth", name:"Ethical & Professional Standards", w:"15–20%", wm:17.5, total:393, modules:5,  done:0,
+     lead:"Module 3: Guidance for Standards I–VII", leadQ:282}
+  ];
+
+  var MOCKS = [
+    "Mock A · S1","Mock A · S2","Mock B · S1","Mock B · S2",
+    "Mock 1 · S1","Mock 1 · S2","Mock 2 · S1","Mock 2 · S2",
+    "Mock 3 · S1","Mock 3 · S2","Mock 4 · S1","Mock 4 · S2",
+    "Mock 5 · S1","Mock 5 · S2","Mock 6 · S1","Mock 6 · S2"
+  ];
+
+  var BENCH = 70; // working benchmark — CFA Institute publishes no MPS
+  var state = {
+    done:{}, mocks:MOCKS.map(function(){ return false; }),
+    scores:MOCKS.map(function(){ return null; }), dpw:6, history:{}
+  };
+  TOPICS.forEach(function(t){ state.done[t.k] = t.done; });
+
+  var saveTimer = null, loaded = false;
+  var undoStack = [], redoStack = [], pendingEdit = null, HISTORY_MAX = 40;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var fmt = function(n){ return Math.round(n).toLocaleString("en-US"); };
+  var clamp = function(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); };
+  var midnight = function(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+  var today = function(){ return midnight(new Date()); };
+  var key = function(d){
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  };
+  var parseKey = function(s){
+    var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]);
+  };
+  var dateLabel = function(d){
+    return d.toLocaleDateString("en-US", {day:"numeric", month:"short"});
+  };
+  var daysBetween = function(a, b){ return Math.round((midnight(b) - midnight(a)) / DAY); };
+
+  /* ---------- undo history ---------- */
+  function snapshot(){
+    var d = {}; TOPICS.forEach(function(t){ d[t.k] = state.done[t.k]; });
+    return { done:d, mocks:state.mocks.slice(), scores:state.scores.slice() };
+  }
+  function restore(s){
+    TOPICS.forEach(function(t){
+      if (typeof s.done[t.k] === "number") state.done[t.k] = clamp(s.done[t.k], 0, t.total);
+    });
+    if (Array.isArray(s.mocks) && s.mocks.length === MOCKS.length) state.mocks = s.mocks.map(Boolean);
+    if (Array.isArray(s.scores) && s.scores.length === MOCKS.length){
+      state.scores = s.scores.map(function(v){ return typeof v === "number" ? v : null; });
+    }
+  }
+  function sameAs(s){
+    var now = snapshot();
+    return TOPICS.every(function(t){ return now.done[t.k] === s.done[t.k]; }) &&
+           now.mocks.every(function(v, i){ return v === s.mocks[i]; }) &&
+           now.scores.every(function(v, i){ return v === (s.scores ? s.scores[i] : null); });
+  }
+  function describe(s){
+    var now = snapshot(), bits = [];
+    TOPICS.forEach(function(t){
+      if (now.done[t.k] !== s.done[t.k]) bits.push(t.name + " " + fmt(now.done[t.k]) + " → " + fmt(s.done[t.k]));
+    });
+    var m = 0; now.mocks.forEach(function(v, i){ if (v !== s.mocks[i]) m++; });
+    if (m) bits.push(m + " mock session" + (m > 1 ? "s" : ""));
+    var sc = s.scores || [];
+    for (var i = 0; i < MOCKS.length; i++){
+      var was = typeof sc[i] === "number" ? sc[i] + "%" : "blank";
+      if (now.scores[i] !== (typeof sc[i] === "number" ? sc[i] : null)){
+        bits.push(MOCKS[i] + " score → " + was); break;
+      }
+    }
+    return bits.length ? bits.slice(0,2).join(", ") : "";
+  }
+  function pushHistory(before){
+    if (!before) return;
+    undoStack.push(before);
+    if (undoStack.length > HISTORY_MAX) undoStack.shift();
+    redoStack.length = 0;
+    updateHistoryUI();
+  }
+  function updateHistoryUI(){
+    var u = $("undoBtn"), r = $("redoBtn"), note = $("undoNote");
+    u.disabled = undoStack.length === 0;
+    r.disabled = redoStack.length === 0;
+    if (undoStack.length){
+      var what = describe(undoStack[undoStack.length - 1]);
+      u.title = what ? "Undo: back to " + what : "Undo the last change";
+      note.textContent = what ? "back to " + what : "";
+    } else {
+      u.title = "Undo the last change (Ctrl/⌘+Z)";
+      note.textContent = "";
+    }
+  }
+  function undo(){
+    if (!undoStack.length) return;
+    var before = undoStack.pop(); redoStack.push(snapshot());
+    restore(before); render(); queueSave();
+  }
+  function redo(){
+    if (!redoStack.length) return;
+    var next = redoStack.pop(); undoStack.push(snapshot());
+    restore(next); render(); queueSave();
+  }
+
+  /* ---------- maths ---------- */
+  function totals(){
+    var topicTotal = 0, topicDone = 0;
+    TOPICS.forEach(function(t){
+      topicTotal += t.total;
+      topicDone += clamp(state.done[t.k] || 0, 0, t.total);
+    });
+    var mockSessions = state.mocks.filter(Boolean).length;
+    var mockTotal = MOCKS.length * MOCK_Q;
+    return {
+      topicTotal:topicTotal, topicDone:topicDone,
+      mockSessions:mockSessions, mockDone:mockSessions * MOCK_Q, mockTotal:mockTotal,
+      grandTotal:topicTotal + mockTotal, grandDone:topicDone + mockSessions * MOCK_Q
+    };
+  }
+
+  // questions per calendar day over the trailing window, from logged history
+  function velocity(){
+    var T = totals(), now = today();
+    var hist = {};
+    Object.keys(state.history).forEach(function(k){ hist[k] = state.history[k]; });
+    hist[key(now)] = T.grandDone;                       // today, live
+    var keys = Object.keys(hist).sort();
+    if (keys.length < 2) return null;
+
+    var latestKey = keys[keys.length - 1];
+    var cutoff = new Date(now.getTime() - 7 * DAY);
+    var baseKey = null;
+    for (var i = 0; i < keys.length; i++){
+      if (parseKey(keys[i]) >= cutoff){ baseKey = keys[i]; break; }
+    }
+    if (!baseKey || baseKey === latestKey) baseKey = keys[Math.max(0, keys.length - 2)];
+    var span = daysBetween(parseKey(baseKey), parseKey(latestKey));
+    if (span < 1) return null;
+    return { perDay:(hist[latestKey] - hist[baseKey]) / span, span:span };
+  }
+
+  function planExpectedToday(){
+    var span = daysBetween(PLAN_START, PLAN_END);
+    var gone = clamp(daysBetween(PLAN_START, today()), 0, span);
+    var grand = totals().grandTotal;
+    return PLAN_BASE + (grand - PLAN_BASE) * (gone / span);
+  }
+
+  /* ---------- build ---------- */
+  function buildLedger(){
+    var host = $("ledger");
+    var head = document.createElement("div");
+    head.className = "lrow head";
+    head.innerHTML = '<span class="eyebrow">Topic &middot; exam weight</span>' +
+                     '<span class="eyebrow">Progress</span>' +
+                     '<span class="eyebrow" style="justify-self:end">Answered</span>';
+    host.appendChild(head);
+
+    TOPICS.forEach(function(t){
+      var row = document.createElement("div");
+      row.className = "lrow"; row.id = "row-" + t.k;
+
+      var name = document.createElement("div");
+      name.className = "tname";
+      name.innerHTML = "<b>" + t.name + "</b>" +
+        '<span class="tmeta"><span>' + t.w + " of exam</span><span>" + t.modules + " modules</span>" +
+        '<span class="flag" id="flag-' + t.k + '"></span></span>';
+
+      var bw = document.createElement("div");
+      bw.className = "barwrap";
+      bw.innerHTML = '<div class="bar"><i id="bar-' + t.k + '" style="width:0%"></i></div>' +
+        '<div class="barnums"><span id="left-' + t.k + '"></span><span id="pct-' + t.k + '"></span></div>';
+
+      var st = document.createElement("div");
+      st.className = "stepper";
+      var input = document.createElement("input");
+      input.type = "number"; input.min = "0"; input.max = String(t.total); input.step = "1";
+      input.id = "in-" + t.k;
+      input.setAttribute("aria-label", "Questions answered in " + t.name);
+      input.addEventListener("focus", function(){ pendingEdit = snapshot(); });
+      input.addEventListener("input", function(){
+        state.done[t.k] = clamp(parseInt(input.value, 10) || 0, 0, t.total);
+        render(); queueSave();
+      });
+      var commit = function(){
+        if (pendingEdit && !sameAs(pendingEdit)) pushHistory(pendingEdit);
+        pendingEdit = null;
+      };
+      input.addEventListener("change", commit);
+      input.addEventListener("blur", commit);
+
+      var of = document.createElement("span");
+      of.className = "of"; of.textContent = "/ " + t.total;
+      var all = document.createElement("button");
+      all.type = "button"; all.textContent = "All"; all.title = "Mark this topic complete";
+      all.addEventListener("click", function(){
+        pushHistory(snapshot()); state.done[t.k] = t.total; render(); queueSave();
+      });
+      st.appendChild(input); st.appendChild(of); st.appendChild(all);
+
+      row.appendChild(name); row.appendChild(bw); row.appendChild(st);
+      host.appendChild(row);
+    });
+  }
+
+  function buildMocks(){
+    var host = $("mockgrid");
+    MOCKS.forEach(function(label, i){
+      var card = document.createElement("div");
+      card.className = "mock"; card.id = "mk-" + i;
+
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "mockToggle"; b.id = "mkT-" + i;
+      b.innerHTML = "<span>" + label + '</span><span class="tick">&#10003;</span>';
+      b.addEventListener("click", function(){
+        pushHistory(snapshot()); state.mocks[i] = !state.mocks[i]; render(); queueSave();
+      });
+
+      var wrap = document.createElement("span");
+      wrap.className = "mockScoreWrap";
+      var sc = document.createElement("input");
+      sc.type = "number"; sc.min = "0"; sc.max = "100"; sc.step = "1";
+      sc.className = "mockScore"; sc.id = "mkS-" + i; sc.placeholder = "—";
+      sc.setAttribute("aria-label", "Score for " + label + ", percent");
+      sc.addEventListener("focus", function(){ pendingEdit = snapshot(); });
+      sc.addEventListener("input", function(){
+        var raw = sc.value.trim();
+        state.scores[i] = raw === "" ? null : clamp(parseInt(raw, 10) || 0, 0, 100);
+        if (state.scores[i] !== null) state.mocks[i] = true;   // a score means it's done
+        render(); queueSave();
+      });
+      var commitS = function(){
+        if (pendingEdit && !sameAs(pendingEdit)) pushHistory(pendingEdit);
+        pendingEdit = null;
+      };
+      sc.addEventListener("change", commitS);
+      sc.addEventListener("blur", commitS);
+      var pc = document.createElement("span");
+      pc.className = "pc"; pc.textContent = "%";
+      wrap.appendChild(sc); wrap.appendChild(pc);
+
+      card.appendChild(b); card.appendChild(wrap);
+      host.appendChild(card);
+    });
+  }
+
+  /* ---------- mock score chart ---------- */
+  function scored(){
+    var out = [];
+    state.scores.forEach(function(v, i){
+      if (typeof v === "number") out.push({ i:i, label:MOCKS[i], v:v });
+    });
+    return out;
+  }
+
+  function renderScores(){
+    var pts = scored();
+    var stats = $("scoreStats"), svg = $("scoreChart"), empty = $("scoreEmpty");
+
+    if (!pts.length){
+      stats.innerHTML = ""; svg.innerHTML = "";
+      svg.setAttribute("hidden", "");   // SVGElement has no .hidden IDL property
+      empty.hidden = false;
+      $("benchNote").textContent =
+        "CFA Institute does not publish the minimum passing score; 70% is the benchmark candidates commonly work to.";
+      return;
+    }
+    empty.hidden = true; svg.removeAttribute("hidden");
+
+    var sum = pts.reduce(function(a, p){ return a + p.v; }, 0);
+    var avg = sum / pts.length;
+    var recent = pts.slice(-3);
+    var rAvg = recent.reduce(function(a, p){ return a + p.v; }, 0) / recent.length;
+    var best = pts.reduce(function(a, p){ return p.v > a.v ? p : a; }, pts[0]);
+    var above = pts.filter(function(p){ return p.v >= BENCH; }).length;
+
+    function cell(label, value, cls, sub){
+      return '<span class="s"><span class="eyebrow">' + label + '</span>' +
+             '<span class="v' + (cls ? " " + cls : "") + '">' + value + "</span>" +
+             (sub ? '<span class="vs" style="display:block;font-size:12px;color:var(--ink-3);font-family:\'IBM Plex Mono\',monospace">' + sub + "</span>" : "") +
+             "</span>";
+    }
+    stats.innerHTML =
+      cell("Average", avg.toFixed(0) + "%", avg >= BENCH ? "good" : "warn",
+           pts.length + " session" + (pts.length > 1 ? "s" : "") + " scored") +
+      cell("Last " + recent.length, rAvg.toFixed(0) + "%", rAvg >= BENCH ? "good" : "warn",
+           rAvg >= avg ? "trending up" : "trending down") +
+      cell("Best", best.v + "%", "", best.label) +
+      cell("At or above 70%", above + " / " + pts.length, above === pts.length ? "good" : "",
+           above === pts.length ? "all of them" : (pts.length - above) + " below");
+
+    // ---- plot ----
+    var W = 720, H = 210, mL = 42, mR = 14, mT = 14, mB = 44;
+    var iw = W - mL - mR, ih = H - mT - mB;
+    var yMin = 40, yMax = 100;
+    var y = function(v){ return mT + ih - (clamp(v, yMin, yMax) - yMin) / (yMax - yMin) * ih; };
+    var x = function(n){ return pts.length === 1 ? mL + iw / 2 : mL + n / (pts.length - 1) * iw; };
+
+    var g = [];
+    [40, 55, 70, 85, 100].forEach(function(t){
+      var isBench = t === BENCH;
+      g.push('<line x1="' + mL + '" x2="' + (mL + iw) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) +
+        '" stroke="' + (isBench ? "var(--signal)" : "var(--rule-soft)") + '" stroke-width="' + (isBench ? 1.5 : 1) +
+        '"' + (isBench ? ' stroke-dasharray="5 4"' : "") + ' />');
+      g.push('<text x="' + (mL - 9) + '" y="' + (y(t) + 4).toFixed(1) + '" text-anchor="end" fill="' +
+        (isBench ? "var(--signal)" : "var(--ink-3)") + '" font-family="IBM Plex Mono, monospace" font-size="11">' + t + "</text>");
+    });
+    if (pts.length > 1){
+      var d = pts.map(function(p, n){ return (n ? "L" : "M") + x(n).toFixed(1) + " " + y(p.v).toFixed(1); }).join(" ");
+      g.push('<path d="' + d + '" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />');
+    }
+    pts.forEach(function(p, n){
+      g.push('<circle cx="' + x(n).toFixed(1) + '" cy="' + y(p.v).toFixed(1) +
+        '" r="5.5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2" />');
+      g.push('<circle class="hit" data-n="' + n + '" cx="' + x(n).toFixed(1) + '" cy="' + y(p.v).toFixed(1) +
+        '" r="16" fill="transparent" pointer-events="all" />');
+      // label every point when there is room, otherwise every other one
+      if (pts.length <= 8 || n % 2 === 0 || n === pts.length - 1){
+        g.push('<text x="' + x(n).toFixed(1) + '" y="' + (H - mB + 18) +
+          '" text-anchor="middle" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace" font-size="10.5">' +
+          p.label.replace("Mock ", "").replace(" · ", "/") + "</text>");
+      }
+    });
+    svg.innerHTML = g.join("");
+
+    // hover / focus tooltip
+    var tip = $("scoreTip"), box = $("chartbox");
+    Array.prototype.forEach.call(svg.querySelectorAll(".hit"), function(h){
+      var show = function(){
+        var n = +h.dataset.n, p = pts[n];
+        var r = svg.getBoundingClientRect(), b = box.getBoundingClientRect();
+        var sx = r.width / W, sy = r.height / H;
+        tip.textContent = p.label + " — " + p.v + "%";
+        tip.style.left = ((r.left - b.left) + x(n) * sx) + "px";
+        tip.style.top = ((r.top - b.top) + y(p.v) * sy) + "px";
+        tip.classList.add("on");
+      };
+      var hide = function(){ tip.classList.remove("on"); };
+      h.addEventListener("mouseenter", show);
+      h.addEventListener("mouseleave", hide);
+    });
+  }
+
+  /* ---------- render ---------- */
+  function render(){
+    var T = totals();
+    var days = daysBetween(today(), EXAM);
+    var calDays = Math.max(days - 1, 1);
+    var slots = Math.max(1, Math.round(calDays * state.dpw / 7));
+    var left = T.grandTotal - T.grandDone;
+    var pace = left > 0 ? Math.ceil(left / slots) : 0;
+
+    $("figDays").textContent = days > 0 ? fmt(days) : "0";
+    $("figDaysSub").textContent = days > 1
+      ? fmt(slots) + " study days at " + state.dpw + "/week"
+      : (days === 1 ? "exam is tomorrow" : "exam day has passed");
+    $("figLeft").textContent = fmt(left);
+    $("figLeftSub").textContent = "of " + fmt(T.grandTotal) + " in the CFAI bank";
+    $("figPace").textContent = fmt(pace);
+    $("figPaceSub").textContent = "questions per study day";
+    Array.prototype.forEach.call(document.querySelectorAll(".dpwBtn"), function(b){
+      b.setAttribute("aria-pressed", (+b.dataset.d === state.dpw) ? "true" : "false");
+    });
+
+    // whole-bank bar
+    var pctDone = T.grandDone / T.grandTotal;
+    $("pctLine").textContent = Math.round(pctDone * 100) + "% complete — " +
+      fmt(T.grandDone) + " / " + fmt(T.grandTotal);
+    var segs = $("bigbar").children;
+    var wTopic = T.topicDone / T.grandTotal * 100, wMock = T.mockDone / T.grandTotal * 100;
+    segs[0].style.width = wTopic.toFixed(2) + "%"; segs[0].hidden = wTopic <= 0;
+    segs[1].style.width = wMock.toFixed(2) + "%";  segs[1].hidden = wMock <= 0;
+    var expected = planExpectedToday();
+    $("planTick").style.left = clamp(expected / T.grandTotal * 100, 0, 100).toFixed(2) + "%";
+
+    // velocity panel
+    var v = velocity();
+    var vPace = $("vPace"), vFinish = $("vFinish"), vPlan = $("vPlan");
+    if (!v){
+      vPace.textContent = "—"; vPace.className = "v";
+      $("vPaceSub").textContent = "needs a second day of updates";
+      vFinish.textContent = "—"; vFinish.className = "v";
+      $("vFinishSub").textContent = "available once your pace is known";
+    } else {
+      vPace.textContent = fmt(Math.max(v.perDay, 0)) + " / day";
+      vPace.className = "v " + (v.perDay >= pace ? "good" : "warn");
+      $("vPaceSub").textContent = "measured over " + v.span + " day" + (v.span > 1 ? "s" : "");
+      if (v.perDay <= 0 || left <= 0){
+        vFinish.textContent = left <= 0 ? "Done" : "—";
+        vFinish.className = "v " + (left <= 0 ? "good" : "");
+        $("vFinishSub").textContent = left <= 0 ? "whole bank cleared" : "no forward progress logged yet";
+      } else {
+        var need = Math.ceil(left / (v.perDay));
+        var when = new Date(today().getTime() + need * DAY);
+        var slack = daysBetween(when, EXAM);
+        vFinish.textContent = dateLabel(when);
+        vFinish.className = "v " + (slack >= 0 ? "good" : "warn");
+        $("vFinishSub").textContent = slack >= 0
+          ? slack + " day" + (slack === 1 ? "" : "s") + " before the exam"
+          : Math.abs(slack) + " day" + (Math.abs(slack) === 1 ? "" : "s") + " after the exam";
+      }
+    }
+
+    var drift = T.grandDone - expected;
+    if (Math.abs(drift) < 25){
+      vPlan.textContent = "On plan"; vPlan.className = "v good";
+    } else if (drift > 0){
+      vPlan.textContent = fmt(drift) + " ahead"; vPlan.className = "v good";
+    } else {
+      vPlan.textContent = fmt(-drift) + " behind"; vPlan.className = "v warn";
+    }
+    $("vPlanSub").textContent = "plan says " + fmt(expected) + " by today";
+
+    // priority ranking: exam weight × questions outstanding
+    var ranked = TOPICS.map(function(t){
+      var rem = t.total - clamp(state.done[t.k] || 0, 0, t.total);
+      return { t:t, k:t.k, rem:rem, score:rem * t.wm };
+    }).filter(function(r){ return r.rem > 0; })
+      .sort(function(a, b){ return b.score - a.score; });
+    var rankedKeys = ranked.slice(0, 3).map(function(r){ return r.k; });
+
+    // today
+    if (!ranked.length){
+      $("todayLine").innerHTML = "Nothing left in the bank.";
+      $("todayWhy").textContent = "Every topic and every mock session is marked complete.";
+    } else if (days <= 0){
+      $("todayLine").innerHTML = "Exam day has passed.";
+      $("todayWhy").textContent = "Good luck with the result.";
+    } else {
+      var top = ranked[0].t;
+      $("todayLine").innerHTML = '<span class="q">' + fmt(pace) + " questions</span> — " + top.name;
+      $("todayWhy").textContent = "Start with " + top.lead + " (" + fmt(top.leadQ) +
+        " questions). " + top.name + " is " + top.w + " of the exam with " +
+        fmt(ranked[0].rem) + " outstanding — the largest weight-adjusted block left.";
+    }
+
+    // rows
+    TOPICS.forEach(function(t){
+      var done = clamp(state.done[t.k] || 0, 0, t.total);
+      var rem = t.total - done, pct = done / t.total * 100;
+      var input = $("in-" + t.k);
+      if (document.activeElement !== input) input.value = String(done);
+      $("bar-" + t.k).style.width = pct.toFixed(2) + "%";
+      var leftEl = $("left-" + t.k);
+      leftEl.textContent = rem > 0 ? fmt(rem) + " left" : "✓ clear";
+      leftEl.className = rem > 0 ? "" : "clear";
+      $("pct-" + t.k).textContent = Math.round(pct) + "%";
+      var idx = rankedKeys.indexOf(t.k);
+      $("flag-" + t.k).textContent = idx === 0 ? "start here" : (idx > 0 ? "high value" : "");
+    });
+
+    for (var i = 0; i < MOCKS.length; i++){
+      $("mk-" + i).classList.toggle("is-done", !!state.mocks[i]);
+      $("mkT-" + i).setAttribute("aria-pressed", state.mocks[i] ? "true" : "false");
+      var si = $("mkS-" + i);
+      if (document.activeElement !== si){
+        si.value = typeof state.scores[i] === "number" ? String(state.scores[i]) : "";
+      }
+    }
+    renderScores();
+    updateHistoryUI();
+  }
+
+  /* ---------- persistence: this browser, via localStorage ---------- */
+  var LS_KEY = "cfa-l1-burndown-v1";
+
+  function setSave(cls, text){
+    $("saveDot").className = "dot" + (cls ? " " + cls : "");
+    $("saveText").textContent = text;
+  }
+  function body(){
+    return {
+      version: 1,
+      done: state.done, mocks: state.mocks, scores: state.scores,
+      dpw: state.dpw, history: state.history,
+      prev: undoStack.length ? undoStack[undoStack.length - 1] : undefined,
+      updatedAt: new Date().toISOString()
+    };
+  }
+  function writeStore(){
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(body()));
+      return true;
+    } catch (e) { return false; }
+  }
+  function applyData(data){
+    if (!data || typeof data !== "object") return false;
+    if (data.done) TOPICS.forEach(function(t){
+      if (typeof data.done[t.k] === "number") state.done[t.k] = clamp(data.done[t.k], 0, t.total);
+    });
+    if (Array.isArray(data.mocks) && data.mocks.length === MOCKS.length) state.mocks = data.mocks.map(Boolean);
+    if (Array.isArray(data.scores) && data.scores.length === MOCKS.length){
+      state.scores = data.scores.map(function(v){ return typeof v === "number" ? clamp(v, 0, 100) : null; });
+    }
+    if ([5,6,7].indexOf(data.dpw) !== -1) state.dpw = data.dpw;
+    if (data.history && typeof data.history === "object") state.history = data.history;
+    return true;
+  }
+  function queueSave(){
+    if (!loaded) return;
+    setSave("busy", "Saving…");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
+      state.history[key(today())] = totals().grandDone;   // one stamp per day
+      if (writeStore()){
+        setSave("ok", "Saved " + new Date().toLocaleTimeString("en-US", {hour:"numeric", minute:"2-digit"}) +
+          " — in this browser");
+      } else {
+        setSave("", "Couldn't save — this browser is blocking site storage (private window?). Use Export to keep your numbers.");
+      }
+      render();
+    }, 700);
+  }
+  function initStore(){
+    var raw = null;
+    try { raw = localStorage.getItem(LS_KEY); }
+    catch (e) {
+      setSave("", "This browser is blocking site storage, so nothing will be saved here.");
+      loaded = false; render(); return;
+    }
+    if (raw){
+      var data = null;
+      try { data = JSON.parse(raw); } catch (e) { data = null; }
+      if (data){
+        applyData(data);
+        if (data.prev && data.prev.done && Array.isArray(data.prev.mocks)){
+          undoStack.push({
+            done: data.prev.done,
+            mocks: data.prev.mocks.map(Boolean),
+            scores: Array.isArray(data.prev.scores) ? data.prev.scores.slice() : state.scores.slice()
+          });
+        }
+        setSave("ok", "Progress restored from your last visit.");
+      } else {
+        setSave("", "Saved progress was unreadable — starting from the 5 Sep counts.");
+      }
+    } else {
+      setSave("ok", "Progress saves automatically, in this browser.");
+    }
+    loaded = true;
+    // stamp today so pace can be measured from the next day you update
+    var tk = key(today());
+    if (state.history[tk] !== totals().grandDone){
+      state.history[tk] = totals().grandDone;
+      writeStore();
+    }
+    render();
+  }
+
+  /* ---------- export / import ---------- */
+  function exportJson(){
+    var blob = new Blob([JSON.stringify(body(), null, 2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "cfa-l1-progress-" + key(today()) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    setSave("ok", "Exported. Keep the file somewhere safe, or load it on another device.");
+  }
+  function importJson(file){
+    var r = new FileReader();
+    r.onload = function(){
+      var data = null;
+      try { data = JSON.parse(String(r.result)); } catch (e) { data = null; }
+      if (!data || !data.done){
+        setSave("", "That file didn't look like a progress export — nothing changed.");
+        return;
+      }
+      pushHistory(snapshot());
+      applyData(data);
+      render(); writeStore();
+      setSave("ok", "Imported. Undo puts it back if that wasn't the file you meant.");
+    };
+    r.onerror = function(){ setSave("", "Couldn't read that file."); };
+    r.readAsText(file);
+  }
+
+  /* ---------- wiring ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll(".dpwBtn"), function(b){
+    b.addEventListener("click", function(){ state.dpw = +b.dataset.d; render(); queueSave(); });
+  });
+  // side sheet
+  (function(){
+    var sheet = $("sheet"), scrim = $("scrim"), openBtn = $("sheetOpen"), closeBtn = $("sheetClose");
+    function setOpen(on){
+      sheet.classList.toggle("on", on);
+      scrim.classList.toggle("on", on);
+      openBtn.setAttribute("aria-expanded", on ? "true" : "false");
+      if (on) sheet.removeAttribute("inert"); else sheet.setAttribute("inert", "");
+      document.body.style.overflow = on ? "hidden" : "";
+      (on ? closeBtn : openBtn).focus();
+    }
+    sheet.setAttribute("inert", "");
+    openBtn.addEventListener("click", function(){ setOpen(true); });
+    closeBtn.addEventListener("click", function(){ setOpen(false); });
+    scrim.addEventListener("click", function(){ setOpen(false); });
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape" && sheet.classList.contains("on")) setOpen(false);
+    });
+    $("sheetSrc").innerHTML =
+      "Sources — CFA Institute: " +
+      '<a href="https://www.cfainstitute.org/programs/cfa-program/candidate-resources/exam-day-preparation-guide">exam day guide</a>, ' +
+      '<a href="https://www.cfainstitute.org/about/governance/policies/cfa-personal-belongings-policy">personal belongings policy</a>, ' +
+      '<a href="https://www.cfainstitute.org/about/governance/policies/cfa-calculator-policy">calculator policy</a>, ' +
+      '<a href="https://www.cfainstitute.org/programs/cfa-program/candidate-resources/level-i-exam">Level I exam</a>. ' +
+      "Calculator keystrokes are practice, not policy — confirm against your own handset.";
+  })();
+
+  // quick add
+  (function(){
+    var sel = $("qaTopic"), cnt = $("qaCount");
+    TOPICS.forEach(function(t){
+      var o = document.createElement("option");
+      o.value = t.k; o.textContent = t.name;
+      sel.appendChild(o);
+    });
+    function add(){
+      var n = parseInt(cnt.value, 10);
+      if (!n || n < 1){ cnt.focus(); return; }
+      var t = TOPICS.filter(function(x){ return x.k === sel.value; })[0];
+      if (!t) return;
+      pushHistory(snapshot());
+      state.done[t.k] = clamp((state.done[t.k] || 0) + n, 0, t.total);
+      cnt.value = "";
+      render(); queueSave();
+    }
+    $("qaAdd").addEventListener("click", add);
+    cnt.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); add(); } });
+    sel.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); add(); } });
+    // preselect the topic the page is telling him to work on
+    var first = TOPICS.filter(function(t){ return (t.total - (state.done[t.k] || 0)) > 0; })[0];
+    if (first) sel.value = first.k;
+  })();
+
+  $("exportBtn").addEventListener("click", exportJson);
+  $("importBtn").addEventListener("click", function(){ $("importFile").click(); });
+  $("importFile").addEventListener("change", function(e){
+    if (e.target.files && e.target.files[0]) importJson(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  $("undoBtn").addEventListener("click", undo);
+  $("redoBtn").addEventListener("click", redo);
+  document.addEventListener("keydown", function(e){
+    if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+    var el = document.activeElement;
+    if (el && (el.tagName === "INPUT" || el.isContentEditable)) return;
+    e.preventDefault();
+    if (e.shiftKey) redo(); else undo();
+  });
+
+  $("foot").innerHTML =
+    "Counted from the CFA Institute Learning Ecosystem — Practice › CFA Program Level I 2026, on 5 September 2026. " +
+    'Exam topic weights per <a href="https://soleadea.org/cfa-level-1/topic-weights">Soleadea</a>; ' +
+    "2026 Level I weights are unchanged from 2025. Plan line runs from 1,251 answered on 5 Sep to the full bank by 15 Nov.";
+
+  buildLedger();
+  buildMocks();
+  render();
+  initStore();
+})();
+</script>
+
+</body>
+</html>
