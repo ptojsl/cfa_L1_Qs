@@ -227,6 +227,26 @@
   .tip.on{opacity:1}
   .benchnote{font-size:12.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;margin-top:8px}
 
+  /* ---------- daily log ---------- */
+  .daystrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}
+  .dcell{border:1px solid var(--rule);border-top:2px solid var(--rule);border-radius:var(--r);background:var(--panel-2);padding:8px 9px 7px;min-width:0}
+  .dcell .eyebrow{display:block;font-size:10.5px;letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dcell .n{display:block;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:20px;font-weight:500;margin-top:3px;letter-spacing:-.01em}
+  .dcell .vs{display:block;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dcell.is-empty .n{color:var(--ink-3)}
+  .dcell.is-at{border-color:var(--accent)}
+  .dcell.is-at .n{color:var(--good)}
+  .dcell.is-today{border-top-color:var(--signal)}
+  .dcell .wd1{display:none}
+  @media (max-width:480px){
+    .daystrip{gap:4px}
+    .dcell{padding:6px 4px 5px}
+    .dcell .eyebrow{font-size:9.5px;letter-spacing:.04em}
+    .dcell .wd{display:none} .dcell .wd1{display:inline}
+    .dcell .n{font-size:15px}
+    .dcell .vs{font-size:9.5px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
+  }
+
   /* ---------- plan ---------- */
   .phases{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   @media (max-width:700px){ .phases{grid-template-columns:1fr} }
@@ -331,6 +351,21 @@
   .quickadd input{width:74px;text-align:right;font-variant-numeric:tabular-nums}
   .quickadd .hint{font-size:12px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;flex:1 1 100%}
   @media (max-width:560px){ .quickadd select{max-width:100%;flex:1 1 100%} }
+
+  /* ---------- sync ---------- */
+  .sync{margin-top:12px;padding-top:12px;border-top:1px solid var(--rule-soft);font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3)}
+  .syncline{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px}
+  .synctext{color:var(--ink-2);flex:1 1 260px;min-width:0}
+  .syncform{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .syncform input{
+    width:min(220px,100%);padding:5px 8px;font-size:13px;border:1px solid var(--rule);border-radius:var(--r);
+    background:var(--panel-2);color:var(--ink);font-family:"IBM Plex Mono",monospace;
+  }
+  .syncform .or{color:var(--ink-3)}
+  .sync button.linkish{border-color:transparent;background:transparent;color:var(--ink-2);font-weight:500;text-decoration:underline;text-underline-offset:2px;padding-left:4px;padding-right:4px}
+  .sync button.linkish:hover:not(:disabled){background:transparent;border-color:transparent;color:var(--accent)}
+  .syncconflict{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:11px 14px;border:1px solid var(--rule);border-left:3px solid var(--signal);border-radius:var(--r);background:var(--panel)}
+  .syncconflict p{margin:0;flex:1 1 100%;color:var(--ink-2);font-size:13px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -433,6 +468,44 @@
       </span>
       <span class="undo-note" id="undoNote"></span>
       <span class="status"><i class="dot" id="saveDot"></i><span id="saveText">Loading saved progress&hellip;</span></span>
+    </div>
+    <div class="sync" id="sync">
+      <div class="syncline">
+        <span class="eyebrow">Sync</span>
+        <i class="dot" id="syncDot"></i>
+        <span class="synctext" id="syncText">Saving in this browser only.</span>
+        <button type="button" id="syncSignIn" hidden>Sign in to sync</button>
+        <button type="button" id="syncSignOut" hidden>Sign out</button>
+      </div>
+      <form class="syncform" id="syncForm" hidden>
+        <button type="button" id="syncGoogle">Continue with Google</button>
+        <span class="or">or</span>
+        <input type="email" id="syncEmail" autocomplete="username" placeholder="Email" aria-label="Email" required>
+        <input type="password" id="syncPass" autocomplete="current-password" placeholder="Password" aria-label="Password" minlength="6" required>
+        <button type="submit">Sign in</button>
+        <button type="button" id="syncCreate">Create account</button>
+        <button type="button" class="linkish" id="syncReset">Forgot password?</button>
+        <button type="button" class="linkish" id="syncCancel">Cancel</button>
+      </form>
+      <div class="syncconflict" id="syncConflict" hidden>
+        <p id="syncConflictText"></p>
+        <button type="button" id="syncKeepCloud">Keep account copy</button>
+        <button type="button" id="syncKeepLocal">Keep this browser's</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Daily log</h2>
+    <p class="lede">What you logged each day since the plan started on 5 Sep. A mock session counts as its 90 questions, and the dashed line is the pace the top of the page is asking for today.</p>
+    <div class="scorepanel">
+      <div class="scorestats" id="dayStats"></div>
+      <div class="chartbox" id="daybox">
+        <svg id="dayChart" viewBox="0 0 720 210" role="img" aria-label="Questions logged per day"></svg>
+        <div class="tip" id="dayTip"></div>
+      </div>
+      <div class="daystrip" id="daystrip"></div>
+      <p class="benchnote">The page stamps your running total once a day, so a day's figure is the change since the previous entry. A number after a gap covers the days since it; a day you never opened the page shows no entry.</p>
     </div>
   </section>
 
@@ -595,6 +668,7 @@
   TOPICS.forEach(function(t){ state.done[t.k] = t.done; });
 
   var saveTimer = null, loaded = false;
+  var editedAt = null;   // when the numbers were last changed by hand (ISO time); sync compares these
   var undoStack = [], redoStack = [], pendingEdit = null, HISTORY_MAX = 40;
 
   var $ = function(id){ return document.getElementById(id); };
@@ -919,6 +993,160 @@
     });
   }
 
+  /* ---------- daily log ---------- */
+  // One stamp a day of the running total lives in state.history. A day's figure is the
+  // change since the previous stamp, so questions entered after a gap land on the day
+  // they were entered, and a day the page was never opened has no entry. Today is live.
+  function dailyLog(){
+    var now = today(), hist = {};
+    Object.keys(state.history).forEach(function(k){
+      if (typeof state.history[k] === "number" && /^\d{4}-\d{2}-\d{2}$/.test(k)) hist[k] = state.history[k];
+    });
+    hist[key(now)] = totals().grandDone;
+    var keys = Object.keys(hist).sort();
+    var first = parseKey(keys[0]);
+    var d = first < PLAN_START ? first : PLAN_START;
+    var days = [], prevKey = null, prevVal = null;
+    while (d <= now){
+      var k = key(d);
+      var e = { key:k, date:d, stamped:false, logged:null, since:null, total:null };
+      if (k in hist){
+        e.stamped = true; e.total = hist[k];
+        if (prevKey !== null){ e.logged = hist[k] - prevVal; e.since = prevKey; }
+        prevKey = k; prevVal = hist[k];
+      }
+      days.push(e);
+      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);   // by calendar day, not 24 hours: DST
+    }
+    return days;
+  }
+  function niceStep(range, n){
+    var raw = Math.max(range, 1) / n, p = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), m = raw / p;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+  }
+  function gapText(e){
+    if (!e.since) return "";
+    var span = daysBetween(parseKey(e.since), e.date);
+    return span > 1 ? "since " + dateLabel(parseKey(e.since)) : "";
+  }
+  function dayText(e){
+    if (e.logged === null) return e.stamped ? "start, " + fmt(e.total) + " answered" : "no entry";
+    if (e.logged < 0) return fmt(e.logged) + " (a correction)";
+    var g = gapText(e);
+    return fmt(e.logged) + " logged" + (g ? " " + g : "");
+  }
+
+  var lastPace = 0;
+  function renderDaily(pace){
+    lastPace = pace;
+    var days = dailyLog(), n = days.length, todayE = days[n - 1];
+    var todayN = todayE.logged === null ? 0 : todayE.logged;
+    var week = 0, i;
+    for (i = Math.max(0, n - 7); i < n; i++) if (days[i].logged > 0) week += days[i].logged;
+    var streak = 0, j = n - 1;
+    if (!(days[j].logged > 0)) j--;   // nothing yet today: the run is still alive until midnight
+    for (; j >= 0 && days[j].logged > 0; j--) streak++;
+    var best = null;
+    days.forEach(function(e){ if (e.logged > 0 && (!best || e.logged > best.logged)) best = e; });
+
+    function cell(label, value, cls, sub){
+      return '<span class="s"><span class="eyebrow">' + label + '</span>' +
+             '<span class="v' + (cls ? " " + cls : "") + '">' + value + "</span>" +
+             (sub ? '<span class="vs" style="display:block;font-size:12px;color:var(--ink-3);font-family:\'IBM Plex Mono\',monospace">' + sub + "</span>" : "") +
+             "</span>";
+    }
+    var todaySub = pace <= 0 ? "nothing left in the bank"
+      : todayN >= pace ? "at today's pace of " + fmt(pace)
+      : fmt(pace - todayN) + " more for today's pace of " + fmt(pace);
+    var weekNeed = pace * state.dpw;
+    $("dayStats").innerHTML =
+      cell("Today", fmt(todayN), pace > 0 && todayN >= pace ? "good" : "", todaySub) +
+      cell("Last 7 days", fmt(week), weekNeed > 0 && week >= weekNeed ? "good" : "",
+           weekNeed > 0 ? "pace calls for " + fmt(weekNeed) + " a week" : "") +
+      cell("Streak", streak + " day" + (streak === 1 ? "" : "s"), streak >= 3 ? "good" : "",
+           streak === 0 ? "log something today to start one" : (todayE.logged > 0 ? "including today" : "today not counted yet")) +
+      cell("Best day", best ? fmt(best.logged) : "—", "", best ? dateLabel(best.date) : "nothing logged yet");
+
+    // ---- plot: on a phone, drawn in phone-sized units and for the last four weeks ----
+    var svg = $("dayChart");
+    var narrow = window.innerWidth <= 480;
+    var shown = narrow ? days.slice(Math.max(0, n - 28)) : days;
+    var W = narrow ? 360 : 720, H = narrow ? 190 : 210, mL = 42, mR = 14, mT = 14, mB = 44;
+    var iw = W - mL - mR, ih = H - mT - mB;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var maxV = 0;
+    shown.forEach(function(e){ if (e.logged > maxV) maxV = e.logged; });
+    var step = niceStep(Math.max(maxV, pace, 10) * 1.12, 4);
+    var yMax = Math.ceil(Math.max(maxV, pace, 10) * 1.12 / step) * step;
+    var y = function(v){ return mT + ih - clamp(v, 0, yMax) / yMax * ih; };
+    var m = shown.length;
+    var slot = iw / m, bw = Math.max(1.5, Math.min(slot * 0.72, 22));
+    var x = function(k){ return mL + (k + 0.5) * slot; };
+    var g = [];
+    for (var t = 0; t <= yMax + 1e-9; t += step){
+      g.push('<line x1="' + mL + '" x2="' + (mL + iw) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) +
+        '" stroke="var(--rule-soft)" stroke-width="1" />');
+      g.push('<text x="' + (mL - 9) + '" y="' + (y(t) + 4).toFixed(1) + '" text-anchor="end" fill="var(--ink-3)"' +
+        ' font-family="IBM Plex Mono, monospace" font-size="11">' + fmt(t) + "</text>");
+    }
+    if (pace > 0 && pace <= yMax){
+      g.push('<line x1="' + mL + '" x2="' + (mL + iw) + '" y1="' + y(pace).toFixed(1) + '" y2="' + y(pace).toFixed(1) +
+        '" stroke="var(--signal)" stroke-width="1.5" stroke-dasharray="5 4" />');
+      g.push('<text x="' + (mL + iw) + '" y="' + (y(pace) - 5).toFixed(1) + '" text-anchor="end" fill="var(--signal)"' +
+        ' font-family="IBM Plex Mono, monospace" font-size="10.5">pace ' + fmt(pace) + "</text>");
+    }
+    shown.forEach(function(e, k){
+      if (e.logged > 0){
+        g.push('<rect x="' + (x(k) - bw / 2).toFixed(1) + '" y="' + y(e.logged).toFixed(1) + '" width="' + bw.toFixed(1) +
+          '" height="' + (y(0) - y(e.logged)).toFixed(1) + '" fill="var(--accent)"' + (k === m - 1 ? ' opacity="0.75"' : "") + ' />');
+      } else if (e.stamped){
+        g.push('<rect x="' + (x(k) - bw / 2).toFixed(1) + '" y="' + (y(0) - 2).toFixed(1) + '" width="' + bw.toFixed(1) +
+          '" height="2" fill="var(--pending)" />');
+      }
+      g.push('<rect class="hit" data-k="' + k + '" x="' + (x(k) - slot / 2).toFixed(1) + '" y="' + mT + '" width="' + slot.toFixed(1) +
+        '" height="' + ih + '" fill="transparent" pointer-events="all" />');
+    });
+    var every = m > 84 ? 14 : 7;
+    for (var k = m - 1; k >= 0; k -= every){
+      g.push('<text x="' + x(k).toFixed(1) + '" y="' + (H - mB + 18) + '" text-anchor="middle" fill="var(--ink-3)"' +
+        ' font-family="IBM Plex Mono, monospace" font-size="10.5">' + (k === m - 1 ? "today" : dateLabel(shown[k].date)) + "</text>");
+    }
+    svg.innerHTML = g.join("");
+
+    var tip = $("dayTip"), box = $("daybox");
+    Array.prototype.forEach.call(svg.querySelectorAll(".hit"), function(h){
+      var show = function(){
+        var e = shown[+h.dataset.k];
+        var r = svg.getBoundingClientRect(), b = box.getBoundingClientRect();
+        var sx = r.width / W, sy = r.height / H;
+        tip.textContent = dateLabel(e.date) + " — " + dayText(e);
+        tip.style.left = ((r.left - b.left) + x(+h.dataset.k) * sx) + "px";
+        tip.style.top = ((r.top - b.top) + y(Math.max(e.logged || 0, 0)) * sy) + "px";
+        tip.classList.add("on");
+      };
+      var hide = function(){ tip.classList.remove("on"); };
+      h.addEventListener("mouseenter", show);
+      h.addEventListener("mouseleave", hide);
+    });
+
+    // ---- the last seven days, readable on a phone ----
+    var cells = [];
+    for (i = Math.max(0, n - 7); i < n; i++){
+      var e = days[i], isToday = i === n - 1, v = e.logged;
+      var cls = "dcell" + (isToday ? " is-today" : "") + (v === null || v <= 0 ? " is-empty" : "") +
+                (pace > 0 && v !== null && v >= pace ? " is-at" : "");   // .today and .empty are taken by other blocks
+      var wd = e.date.toLocaleDateString("en-US", {weekday:"short"});
+      var head = '<span class="wd">' + wd + '</span><span class="wd1">' + wd.charAt(0) + "</span> " + e.date.getDate();
+      var num = v === null ? "—" : fmt(v);
+      var sub = v === null ? (e.stamped ? "start" : "no entry")
+              : v < 0 ? "correction"
+              : (gapText(e) || (isToday ? "so far" : "&nbsp;"));
+      cells.push('<div class="' + cls + '" title="' + dateLabel(e.date) + " — " + dayText(e) + '">' +
+        '<span class="eyebrow">' + head + '</span><span class="n">' + num + '</span><span class="vs">' + sub + "</span></div>");
+    }
+    $("daystrip").innerHTML = cells.join("");
+  }
+
   /* ---------- render ---------- */
   function render(){
     var T = totals();
@@ -1036,6 +1264,7 @@
       }
     }
     renderScores();
+    renderDaily(pace);
     updateHistoryUI();
   }
 
@@ -1050,7 +1279,7 @@
     return {
       version: 1,
       done: state.done, mocks: state.mocks, scores: state.scores,
-      dpw: state.dpw, history: state.history,
+      dpw: state.dpw, history: state.history, editedAt: editedAt,
       prev: undoStack.length ? undoStack[undoStack.length - 1] : undefined,
       updatedAt: new Date().toISOString()
     };
@@ -1075,18 +1304,21 @@
     return true;
   }
   function queueSave(){
-    if (!loaded) return;
-    setSave("busy", "Saving…");
+    editedAt = new Date().toISOString();
+    if (loaded) setSave("busy", "Saving…");
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function(){
       state.history[key(today())] = totals().grandDone;   // one stamp per day
-      if (writeStore()){
-        setSave("ok", "Saved " + new Date().toLocaleTimeString("en-US", {hour:"numeric", minute:"2-digit"}) +
-          " — in this browser");
-      } else {
-        setSave("", "Couldn't save — this browser is blocking site storage (private window?). Use Export to keep your numbers.");
+      if (loaded){
+        if (writeStore()){
+          setSave("ok", "Saved " + new Date().toLocaleTimeString("en-US", {hour:"numeric", minute:"2-digit"}) +
+            " — in this browser");
+        } else {
+          setSave("", "Couldn't save — this browser is blocking site storage (private window?). Use Export to keep your numbers.");
+        }
       }
       render();
+      notifyEdit();
     }, 700);
   }
   function initStore(){
@@ -1101,6 +1333,9 @@
       try { data = JSON.parse(raw); } catch (e) { data = null; }
       if (data){
         applyData(data);
+        editedAt = ("editedAt" in data)
+          ? (typeof data.editedAt === "string" ? data.editedAt : null)
+          : (typeof data.updatedAt === "string" ? data.updatedAt : null);
         if (data.prev && data.prev.done && Array.isArray(data.prev.mocks)){
           undoStack.push({
             done: data.prev.done,
@@ -1147,12 +1382,72 @@
       }
       pushHistory(snapshot());
       applyData(data);
+      editedAt = new Date().toISOString();
       render(); writeStore();
       setSave("ok", "Imported. Undo puts it back if that wasn't the file you meant.");
+      notifyEdit();
     };
     r.onerror = function(){ setSave("", "Couldn't read that file."); };
     r.readAsText(file);
   }
+
+  /* ---------- sync bridge: the Firebase module at the end of the page works through this ---------- */
+  var editListeners = [];
+  function notifyEdit(){
+    editListeners.forEach(function(fn){ try { fn(); } catch (e) {} });
+  }
+  function normalised(d){
+    d = d || {};
+    var out = { done:{}, mocks:[], scores:[], dpw:[5,6,7].indexOf(d.dpw) !== -1 ? d.dpw : 6 };
+    TOPICS.forEach(function(t){
+      var v = d.done ? d.done[t.k] : 0;
+      out.done[t.k] = clamp(typeof v === "number" ? v : 0, 0, t.total);
+    });
+    for (var i = 0; i < MOCKS.length; i++){
+      out.mocks.push(!!(Array.isArray(d.mocks) && d.mocks[i]));
+      var s = Array.isArray(d.scores) ? d.scores[i] : null;
+      out.scores.push(typeof s === "number" ? clamp(s, 0, 100) : null);
+    }
+    return out;
+  }
+  function answeredIn(d){
+    var n = normalised(d), sum = 0;
+    TOPICS.forEach(function(t){ sum += n.done[t.k]; });
+    return sum + n.mocks.filter(Boolean).length * MOCK_Q;
+  }
+  window.burndownSync = {
+    // this browser's numbers, shaped as the account copy stores them
+    local: function(){
+      var n = normalised(state), h = {};
+      Object.keys(state.history).forEach(function(k){ h[k] = state.history[k]; });
+      return { done:n.done, mocks:n.mocks, scores:n.scores, dpw:n.dpw, history:h,
+               editedAt:editedAt, answered:answeredIn(state) };
+    },
+    // the same numbers as this browser? Day stamps and times are not compared.
+    same: function(d){ return JSON.stringify(normalised(d)) === JSON.stringify(normalised(state)); },
+    answered: answeredIn,
+    // take the account copy. Undo puts this browser's numbers back; day stamps are merged.
+    apply: function(d){
+      var before = snapshot(), was = JSON.stringify(normalised(state)), h = {};
+      Object.keys(state.history).forEach(function(k){ h[k] = state.history[k]; });
+      if (d.history && typeof d.history === "object"){
+        Object.keys(d.history).forEach(function(k){ if (typeof d.history[k] === "number") h[k] = d.history[k]; });
+      }
+      applyData({ done:d.done, mocks:d.mocks, scores:d.scores, dpw:d.dpw, history:h });
+      if (!sameAs(before)) pushHistory(before);
+      editedAt = typeof d.editedAt === "string" ? d.editedAt : null;
+      clearTimeout(saveTimer);   // a pending local save is superseded by the newer account copy
+      state.history[key(today())] = totals().grandDone;
+      if (loaded && writeStore() && JSON.stringify(normalised(state)) !== was){
+        setSave("ok", "Saved " + new Date().toLocaleTimeString("en-US", {hour:"numeric", minute:"2-digit"}) +
+          " — in this browser");
+      }
+      render();
+    },
+    // "keep this browser's copy" counts as a fresh edit
+    touch: function(){ editedAt = new Date().toISOString(); if (loaded) writeStore(); },
+    onEdit: function(fn){ editListeners.push(fn); }
+  };
 
   /* ---------- wiring ---------- */
   Array.prototype.forEach.call(document.querySelectorAll(".dpwBtn"), function(b){
@@ -1211,6 +1506,17 @@
     if (first) sel.value = first.k;
   })();
 
+  (function(){
+    var was = window.innerWidth <= 480, t = null;
+    window.addEventListener("resize", function(){
+      clearTimeout(t);
+      t = setTimeout(function(){
+        var now = window.innerWidth <= 480;
+        if (now !== was){ was = now; renderDaily(lastPace); }
+      }, 150);
+    });
+  })();
+
   $("exportBtn").addEventListener("click", exportJson);
   $("importBtn").addEventListener("click", function(){ $("importFile").click(); });
   $("importFile").addEventListener("change", function(e){
@@ -1238,6 +1544,288 @@
   render();
   initStore();
 })();
+</script>
+
+<script type="module">
+/* ---------- sync across devices: Firebase Authentication + Cloud Firestore ----------
+   Paste your web app's config from the Firebase console over the empty strings below
+   (Project settings > General > Your apps > SDK setup and configuration > Config).
+   While apiKey is empty the page saves in this browser only, exactly as before.
+   These values name your Firebase project and are not secret. Access is decided by the
+   Firestore rules in firestore.rules: an account can only read and write its own copy. */
+const firebaseConfig = {
+  apiKey: "AIzaSyDl_Jtojl6vGwbS7yzGgLdy7FFgX0Ek1Yc",
+  authDomain: "cfa-l1-tracker.firebaseapp.com",
+  projectId: "cfa-l1-tracker",
+  storageBucket: "cfa-l1-tracker.firebasestorage.app",
+  messagingSenderId: "409695115730",
+  appId: "1:409695115730:web:d341ede283794b40f5d00b"
+};
+
+const SDK = "https://www.gstatic.com/firebasejs/12.19.0/";
+const COLLECTION = "progress";               // one document per account: progress/{uid}
+const META_KEY = "cfa-l1-burndown-sync-v1";  // the account this browser last agreed with, and that copy's edit time
+const NONE = "none";                         // stands for "there is no account copy"
+
+const bridge = window.burndownSync;
+const $ = (id) => document.getElementById(id);
+const ui = {
+  dot: $("syncDot"), text: $("syncText"), signIn: $("syncSignIn"), signOut: $("syncSignOut"),
+  form: $("syncForm"), google: $("syncGoogle"), email: $("syncEmail"), pass: $("syncPass"),
+  create: $("syncCreate"), reset: $("syncReset"), cancel: $("syncCancel"),
+  conflict: $("syncConflict"), conflictText: $("syncConflictText"),
+  keepCloud: $("syncKeepCloud"), keepLocal: $("syncKeepLocal")
+};
+
+const SIGNED_OUT = "Saving in this browser only. Sign in to keep one copy across your devices.";
+const OFFLINE = "Offline. Changes are saved in this browser and sync when you reconnect.";
+let shown = "";
+function status(kind, text){
+  shown = kind;
+  ui.dot.className = "dot" + (kind ? " " + kind : "");
+  ui.text.textContent = text;
+}
+const clock = () => new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const count = (n) => Math.round(n).toLocaleString("en-US");
+function changed(iso){
+  const d = iso ? new Date(iso) : null;
+  if (!d || isNaN(d)) return "not changed since it was set up";
+  return "last changed " + d.toLocaleDateString("en-US", { day: "numeric", month: "short" }) + ", " +
+    d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+const AUTH_ERRORS = {
+  "auth/popup-closed-by-user": "The sign-in window was closed before it finished.",
+  "auth/cancelled-popup-request": "The sign-in window was closed before it finished.",
+  "auth/popup-blocked": "The browser blocked the sign-in window. Allow pop-ups for this page, or use email and password.",
+  "auth/operation-not-supported-in-this-environment": "Google sign-in can't open here. Use email and password instead.",
+  "auth/web-storage-unsupported": "This browser blocks the storage that sign-in needs. Try a normal, not private, window.",
+  "auth/unauthorized-domain": "Firebase doesn't know this site yet. Add its domain under Authentication > Settings > Authorized domains.",
+  "auth/operation-not-allowed": "That sign-in method is switched off. Turn it on under Authentication > Sign-in method.",
+  "auth/invalid-credential": "The email or password is wrong. New here? Use Create account.",
+  "auth/wrong-password": "The email or password is wrong.",
+  "auth/user-not-found": "There is no account with that email. Use Create account.",
+  "auth/invalid-email": "That email address doesn't look right.",
+  "auth/missing-password": "Type a password first.",
+  "auth/email-already-in-use": "That email already has an account. Sign in instead.",
+  "auth/weak-password": "Use a password of at least 6 characters.",
+  "auth/too-many-requests": "Too many attempts. Wait a few minutes, then try again.",
+  "auth/network-request-failed": "Couldn't reach Firebase. Check the connection and try again.",
+  "auth/invalid-api-key": "The apiKey in firebaseConfig is wrong. Copy it again from the Firebase console."
+};
+function authProblem(e){
+  status("", AUTH_ERRORS[e && e.code] || "Sign-in failed: " + ((e && e.message) || e));
+}
+
+function start(){
+  if (!bridge) return;   // the tracker's own script did not run, so there is nothing to sync
+  if (!firebaseConfig.apiKey || !firebaseConfig.projectId){
+    status("", "Saving in this browser only. Syncing needs a Firebase config; the README says how.");
+    return;
+  }
+  status("busy", "Connecting…");
+  Promise.all([
+    import(SDK + "firebase-app.js"),
+    import(SDK + "firebase-auth.js"),
+    import(SDK + "firebase-firestore.js")
+  ]).then(
+    ([core, A, F]) => connect(core, A, F),
+    () => {
+      status("", "Couldn't load sync, probably no connection. Progress is still saved in this browser.");
+      window.addEventListener("online", start, { once: true });
+    }
+  );
+}
+
+function connect(core, A, F){
+  let auth, db;
+  try {
+    const app = core.initializeApp(firebaseConfig);
+    auth = A.getAuth(app);
+    db = F.getFirestore(app);
+  } catch (e) {
+    status("", "Firebase didn't start (" + ((e && e.message) || e) + "). Check firebaseConfig.");
+    return;
+  }
+
+  let user = null, ref = null, unlisten = null;
+  let resolved = false;   // this browser has been compared with the account copy since signing in
+  let cloud;              // the account copy last heard from the server: undefined = not yet, null = none exists
+  let busy = false, again = false;
+
+  const readMeta = () => { try { return JSON.parse(localStorage.getItem(META_KEY)) || null; } catch (e) { return null; } };
+  const writeMeta = (uid, base) => { try { localStorage.setItem(META_KEY, JSON.stringify({ uid: uid, base: base })); } catch (e) {} };
+  const baseFor = (uid) => { const m = readMeta(); return m && m.uid === uid ? m.base : undefined; };
+  const editOf = (d) => d ? (typeof d.editedAt === "string" ? d.editedAt : null) : NONE;
+  const who = () => (user && (user.email || user.displayName)) || "your account";
+
+  function problem(e){
+    const code = (e && e.code) || "", msg = (e && e.message) || String(e);
+    if (code === "permission-denied")
+      status("", "Firebase refused access. Publish the rules from firestore.rules under Firestore Database > Rules.");
+    else if (code === "unavailable" || code === "deadline-exceeded")
+      status("busy", OFFLINE);
+    else if (code === "not-found" || /database .*does not exist/i.test(msg))
+      status("", "This Firebase project has no Firestore database yet. Create one under Firestore Database.");
+    else
+      status("", "Sync problem: " + msg);
+  }
+
+  // Decide what to do with the latest account copy. "base" is the edit time this browser and the
+  // account last agreed on; each side has changed if its edit time has moved away from it.
+  function reconcile(){
+    if (!user || cloud === undefined) return;
+    const uid = user.uid, base = baseFor(uid), local = bridge.local(), cloudEdit = editOf(cloud);
+    if (cloud === null){ push(NONE); return; }
+    if (bridge.same(cloud)){
+      if (local.editedAt !== cloudEdit) bridge.apply(cloud);   // adopt its edit time and day stamps
+      writeMeta(uid, cloudEdit);
+      resolved = true;
+      ui.conflict.hidden = true;
+      if (shown !== "ok") status("ok", "In sync · " + who());
+      return;
+    }
+    const agreed = base === undefined ? null : base;   // never synced here: compare with "never edited"
+    const localChanged = local.editedAt !== agreed;
+    const cloudChanged = cloudEdit !== agreed;
+    if (localChanged && !cloudChanged){ push(cloudEdit); return; }
+    if (!localChanged){ pull(); return; }
+    ask();
+  }
+
+  function pull(){
+    bridge.apply(cloud);
+    writeMeta(user.uid, editOf(cloud));
+    resolved = true;
+    ui.conflict.hidden = true;
+    status("ok", "Updated from your account at " + clock() + " · " + who());
+  }
+
+  // Write this browser's numbers, but only if the account copy is still the one expected.
+  // A transaction reads and writes in one step, so a copy saved meanwhile by another device is never overwritten.
+  function push(expect){
+    if (!user) return;
+    if (busy){ again = true; return; }
+    busy = true;
+    resolved = true;
+    ui.conflict.hidden = true;
+    const uid = user.uid, target = ref, local = bridge.local();
+    const want = expect === undefined ? baseFor(uid) : expect;
+    const copy = {
+      version: 1, done: local.done, mocks: local.mocks, scores: local.scores, dpw: local.dpw,
+      history: local.history, editedAt: local.editedAt,
+      updatedAt: new Date().toISOString(), savedAt: F.serverTimestamp()
+    };
+    status("busy", "Syncing…");
+    F.runTransaction(db, async (tx) => {
+      const snap = await tx.get(target);
+      const cur = snap.exists() ? snap.data() : null;
+      if (editOf(cur) !== want && !(cur && bridge.same(cur))) return { newer: cur };
+      tx.set(target, copy);
+      return null;
+    }).then((clash) => {
+      busy = false;
+      if (!user || user.uid !== uid) return;
+      if (clash){ again = false; cloud = clash.newer; reconcile(); return; }
+      writeMeta(uid, copy.editedAt);
+      status("ok", "Synced " + clock() + " · " + who());
+      if (again){ again = false; push(); }
+    }).catch((e) => {
+      busy = false;
+      if (!user || user.uid !== uid) return;
+      problem(e);   // the next edit, or the server snapshot on reconnecting, tries again
+    });
+  }
+
+  function ask(){
+    resolved = false;
+    const local = bridge.local();
+    ui.conflictText.textContent =
+      "This browser and your account have different numbers. " +
+      "Account copy: " + count(bridge.answered(cloud)) + " answered, " + changed(cloud.editedAt) + ". " +
+      "This browser: " + count(local.answered) + " answered, " + changed(local.editedAt) + ".";
+    ui.conflict.hidden = false;
+    status("busy", "Choose which copy to keep. Nothing syncs until you do.");
+  }
+  ui.keepCloud.addEventListener("click", () => { if (user && cloud) pull(); });
+  ui.keepLocal.addEventListener("click", () => {
+    if (!user || cloud === undefined) return;
+    bridge.touch();
+    push(editOf(cloud));
+  });
+
+  function listen(){
+    if (!user || unlisten) return;
+    unlisten = F.onSnapshot(ref, { includeMetadataChanges: true }, (snap) => {
+      if (snap.metadata.hasPendingWrites) return;
+      if (snap.metadata.fromCache){   // not confirmed by the server, so never decide on it
+        status("busy", resolved ? OFFLINE : "Waiting for a connection to check your account copy…");
+        return;
+      }
+      cloud = snap.exists() ? snap.data() : null;
+      reconcile();
+    }, (e) => { unlisten = null; problem(e); });
+  }
+  // a listener that stopped (offline for long, rules published later) restarts when the page comes back
+  window.addEventListener("online", listen);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") listen(); });
+
+  bridge.onEdit(() => { if (user && resolved) push(); });
+
+  A.onAuthStateChanged(auth, (u) => {
+    if (unlisten){ unlisten(); unlisten = null; }
+    user = u; ref = null; resolved = false; cloud = undefined; busy = false; again = false;
+    ui.conflict.hidden = true;
+    ui.form.hidden = true;
+    ui.signIn.hidden = !!u;
+    ui.signOut.hidden = !u;
+    if (!u){ status("", SIGNED_OUT); return; }
+    status("busy", "Signed in as " + who() + ". Checking your account copy…");
+    ref = F.doc(db, COLLECTION, u.uid);
+    listen();
+  }, authProblem);
+
+  ui.signIn.addEventListener("click", () => {
+    ui.form.hidden = false;
+    ui.signIn.hidden = true;
+    ui.email.focus();
+  });
+  ui.cancel.addEventListener("click", () => {
+    ui.form.hidden = true;
+    ui.signIn.hidden = !!user;
+    if (!user) status("", SIGNED_OUT);
+  });
+  ui.signOut.addEventListener("click", () => { A.signOut(auth).catch(authProblem); });
+  ui.google.addEventListener("click", () => {
+    status("busy", "Waiting for Google sign-in…");
+    A.signInWithPopup(auth, new A.GoogleAuthProvider()).catch(authProblem);
+  });
+  ui.form.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    status("busy", "Signing in…");
+    A.signInWithEmailAndPassword(auth, ui.email.value.trim(), ui.pass.value)
+      .then(() => { ui.pass.value = ""; }, authProblem);
+  });
+  ui.create.addEventListener("click", () => {
+    if (!ui.form.reportValidity()) return;
+    status("busy", "Creating your account…");
+    A.createUserWithEmailAndPassword(auth, ui.email.value.trim(), ui.pass.value)
+      .then(() => { ui.pass.value = ""; }, authProblem);
+  });
+  ui.reset.addEventListener("click", () => {
+    const email = ui.email.value.trim();
+    if (!email || !ui.email.checkValidity()){
+      ui.email.focus();
+      status("", "Type your email, then press Forgot password.");
+      return;
+    }
+    A.sendPasswordResetEmail(auth, email).then(
+      () => status("ok", "If " + email + " has an account, a password reset email is on its way."),
+      authProblem);
+  });
+}
+
+start();
 </script>
 
 </body>
